@@ -1,40 +1,48 @@
 module Trie exposing (..)
 
 import Array exposing (Array)
+import Dict
+import Set exposing (Set)
 
 
-type Trie d
+type Trie
     = Empty
     | Trie
-        { children : Array (Trie d)
-        , data : List d
+        { children : Array Trie
+        , data : List Int
         }
 
 
-type alias Info =
-    { tags : String
-    , name : String
+type alias Info data =
+    { id : Int
+    , tags : String
+    , data : data
+    }
+
+
+type alias Data =
+    { name : String
     }
 
 
 infos =
-    [ Info "allan" "Allan"
-    , Info "allan" "Allan Nozomu Fukasawa"
-    , Info "alberto" "Alberto"
-    , Info "allesandra" "Allesandra"
-    , Info "carlos" "Carlos"
-    , Info "carla" "Carla"
-    , Info "carlin" "Carlin"
-    , Info "eleonor" "Eleonor"
-    , Info "ellen" "Ellen"
-    , Info "elen" "Elen"
-    , Info "eleonora" "Eleonora"
-    , Info "ele" "Ele"
-    , Info "el" "El"
+    [ Info 1 "allan" <| Data "Allan"
+    , Info 2 "allan" <| Data "Allan Nozomu Fukasawa"
+    , Info 3 "alberto" <| Data "Alberto"
+    , Info 4 "allesandra" <| Data "Allesandra"
+    , Info 5 "carlos" <| Data "Carlos"
+    , Info 6 "carla" <| Data "Carla"
+    , Info 7 "carlin" <| Data "Carlin"
+    , Info 8 "eleonor" <| Data "Eleonor"
+    , Info 9 "ellen" <| Data "Ellen"
+    , Info 10 "elen" <| Data "Elen"
+    , Info 11 "eleonora" <| Data " Eleonora"
+    , Info 12 "ele" <| Data "Ele"
+    , Info 13 "el" <| Data "El"
     ]
 
 
-trieInfos =
+infosTrie =
     List.foldl
         (\curr acc ->
             addIntoTrie curr acc
@@ -43,7 +51,12 @@ trieInfos =
         infos
 
 
-emptyArray : Array (Trie d)
+infosDict =
+    List.map (\info -> ( info.id, info )) infos
+        |> Dict.fromList
+
+
+emptyArray : Array Trie
 emptyArray =
     Array.initialize 26 (\_ -> Empty)
 
@@ -53,23 +66,23 @@ indexOfChar c =
     Char.toCode c - Char.toCode 'a'
 
 
-addIntoTrie : Info -> Trie Info -> Trie Info
+addIntoTrie : Info x -> Trie -> Trie
 addIntoTrie info trie =
-    addIntoTrieAux info (String.toList info.tags) trie
+    addIntoTrieAux info info.tags trie
 
 
-addIntoTrieAux : Info -> List Char -> Trie Info -> Trie Info
+addIntoTrieAux : Info x -> String -> Trie -> Trie
 addIntoTrieAux info s trie =
-    case s of
-        [] ->
+    case String.uncons s of
+        Nothing ->
             case trie of
                 Empty ->
-                    Trie { data = [ info ], children = emptyArray }
+                    Trie { data = [ info.id ], children = emptyArray }
 
                 Trie currTrie ->
-                    Trie { currTrie | data = info :: currTrie.data }
+                    Trie { currTrie | data = info.id :: currTrie.data }
 
-        c :: ss ->
+        Just ( c, ss ) ->
             let
                 index =
                     indexOfChar c
@@ -99,16 +112,26 @@ addIntoTrieAux info s trie =
                     Trie { currTrie | children = newChildren }
 
 
-fetchFromTrie : String -> Trie Info -> List Info
+fetchFromTrie : String -> Trie -> List Data
 fetchFromTrie s trie =
     fetchFromTrieAux (String.toLower s |> String.toList) trie
+        |> Set.foldl
+            (\curr acc ->
+                case Dict.get curr infosDict of
+                    Nothing ->
+                        acc
+
+                    Just data ->
+                        data.data :: acc
+            )
+            []
 
 
-fetchFromTrieAux : List Char -> Trie Info -> List Info
+fetchFromTrieAux : List Char -> Trie -> Set Int
 fetchFromTrieAux s trie =
     case trie of
         Empty ->
-            []
+            Set.empty
 
         Trie currTrie ->
             case s of
@@ -123,20 +146,20 @@ fetchFromTrieAux s trie =
                     fetchFromTrieAux ss (Maybe.withDefault Empty <| Array.get index currTrie.children)
 
 
-fetchAllMatches : Trie Info -> List Info
+fetchAllMatches : Trie -> Set Int
 fetchAllMatches trie =
     case trie of
         Empty ->
-            []
+            Set.empty
 
         Trie currTrie ->
             let
                 results =
                     Array.foldl
                         (\curr acc ->
-                            fetchAllMatches curr ++ acc
+                            Set.union (fetchAllMatches curr) acc
                         )
-                        currTrie.data
+                        (Set.fromList currTrie.data)
                         currTrie.children
             in
             results
