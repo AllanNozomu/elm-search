@@ -1,9 +1,14 @@
 module Trie exposing (..)
 
 import Array exposing (Array)
-import Dict
+import Dict exposing (Dict)
 import Set exposing (Set)
 
+type alias Index data = 
+    {
+        trie : Trie,
+        dataDict : Dict Int data
+    }
 
 type Trie
     = Empty
@@ -42,18 +47,8 @@ infos =
     ]
 
 
-infosTrie =
-    List.foldl
-        (\curr acc ->
-            addIntoTrie curr acc
-        )
-        Empty
-        infos
-
-
-infosDict =
-    List.map (\info -> ( info.id, info )) infos
-        |> Dict.fromList
+infosIndex = 
+    buildIndex infos
 
 
 emptyArray : Array Trie
@@ -64,6 +59,22 @@ emptyArray =
 indexOfChar : Char -> Int
 indexOfChar c =
     Char.toCode c - Char.toCode 'a'
+
+
+buildIndex : List (Entry data) -> Index data
+buildIndex entries =
+    let
+        trie = List.foldl
+            (\curr acc ->
+                addIntoTrie curr acc
+            )
+            Empty
+            entries
+
+        dataDict = List.map (\info -> ( info.id, info.data )) entries
+            |> Dict.fromList 
+    in
+    Index trie dataDict
 
 
 addIntoTrie : Entry x -> Trie -> Trie
@@ -112,23 +123,23 @@ addIntoTrieAux entry s trie =
                     Trie { currTrie | children = newChildren }
 
 
-fetchFromTrie : String -> Trie -> List Data
-fetchFromTrie s trie =
-    fetchFromTrieAux (String.toLower s |> String.toList) trie
+fetchFromIndex : String -> Index data -> List data
+fetchFromIndex s index =
+    fetchFromTrie (String.toLower s |> String.toList) index.trie
         |> Set.foldl
             (\curr acc ->
-                case Dict.get curr infosDict of
+                case Dict.get curr index.dataDict of
                     Nothing ->
                         acc
 
                     Just data ->
-                        data.data :: acc
+                        data :: acc
             )
             []
 
 
-fetchFromTrieAux : List Char -> Trie -> Set Int
-fetchFromTrieAux s trie =
+fetchFromTrie : List Char -> Trie -> Set Int
+fetchFromTrie s trie =
     case trie of
         Empty ->
             Set.empty
@@ -136,18 +147,18 @@ fetchFromTrieAux s trie =
         Trie currTrie ->
             case s of
                 [] ->
-                    fetchAllMatches trie
+                    getAllMatches trie
 
                 c :: ss ->
                     let
                         index =
                             indexOfChar c
                     in
-                    fetchFromTrieAux ss (Maybe.withDefault Empty <| Array.get index currTrie.children)
+                    fetchFromTrie ss (Maybe.withDefault Empty <| Array.get index currTrie.children)
 
 
-fetchAllMatches : Trie -> Set Int
-fetchAllMatches trie =
+getAllMatches : Trie -> Set Int
+getAllMatches trie =
     case trie of
         Empty ->
             Set.empty
@@ -157,7 +168,7 @@ fetchAllMatches trie =
                 results =
                     Array.foldl
                         (\curr acc ->
-                            Set.union (fetchAllMatches curr) acc
+                            Set.union (getAllMatches curr) acc
                         )
                         (Set.fromList currTrie.data)
                         currTrie.children
