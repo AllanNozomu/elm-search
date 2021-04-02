@@ -12,13 +12,12 @@ normalize s =
         Just ( c, sss ) ->
             let
                 cc =
-                    Maybe.withDefault ' ' <| Dict.get c lookupDict
+                    Maybe.withDefault c <| Dict.get c lookupDict
             in
-            if cc == ' ' then
-                normalize sss
-
-            else
+            if Char.isAlpha c then
                 String.cons cc (normalize sss)
+            else
+                normalize sss
 
 
 lookupDict : Dict Char Char
