@@ -1,9 +1,8 @@
-module Trie exposing (..)
+module Trie exposing (Index, DataTags, buildIndex, fetchFromIndex)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Set exposing (Set)
-
 
 type alias Index data =
     { trie : Trie
@@ -17,6 +16,10 @@ type Trie
         { children : Array Trie
         , data : List Int
         }
+    | Leaf
+        {
+            data : List Int
+        }
 
 
 type alias Entry data =
@@ -25,36 +28,7 @@ type alias Entry data =
     , data : data
     }
 
-
-type alias DataTags data =
-    List ( data, List String )
-
-
-type alias Data =
-    { name : String
-    }
-
-
-infos =
-    [ ( "Allan", [ "allan" ] )
-    , ( "Allan Nozomu Fukasawa", [ "allan" ] )
-    , ( "Alberto", [ "alberto" ] )
-    , ( "Allesandra", [ "allesandra" ] )
-    , ( "Carlos", [ "carlos" ] )
-    , ( "Carla", [ "carla" ] )
-    , ( "Carlin", [ "carlin" ] )
-    , ( "Eleonor", [ "eleonor" ] )
-    , ( "Ellen", [ "ellen", "allan" ] )
-    , ( "Elen", [ "elen" ] )
-    , ( " Eleonora", [ "eleonora" ] )
-    , ( "Ele", [ "ele" ] )
-    , ( "El", [ "el" ] )
-    ]
-
-
-infosIndex =
-    buildIndex infos
-
+type alias DataTags data = List ( data, List String ) 
 
 emptyArray : Array Trie
 emptyArray =
@@ -89,12 +63,9 @@ buildIndex datas =
 
 addIntoTrie : Entry x -> Trie -> Trie
 addIntoTrie entry trie =
-    List.foldl
-        (\curr acc ->
-            addIntoTrieAux entry.id curr acc
-        )
-        trie
-        entry.tags
+    List.foldl (\curr acc ->
+        addIntoTrieAux entry.id curr acc
+    ) trie entry.tags
 
 
 addIntoTrieAux : Int -> String -> Trie -> Trie
@@ -103,7 +74,10 @@ addIntoTrieAux id s trie =
         Nothing ->
             case trie of
                 Empty ->
-                    Trie { data = [ id ], children = emptyArray }
+                    Leaf { data = [ id ] }
+                
+                Leaf leaf ->
+                    Leaf {leaf | data = id :: leaf.data}
 
                 Trie currTrie ->
                     Trie { currTrie | data = id :: currTrie.data }
@@ -123,6 +97,16 @@ addIntoTrieAux id s trie =
                             Array.set index newChild emptyArray
                     in
                     Trie { data = [], children = newChildren }
+
+                Leaf leaf -> 
+                    let
+                        newChild =
+                            addIntoTrieAux id ss Empty
+
+                        newChildren =
+                            Array.set index newChild emptyArray
+                    in
+                    Trie { data = leaf.data, children = newChildren }
 
                 Trie currTrie ->
                     let
@@ -159,6 +143,11 @@ fetchFromTrie s trie =
         Empty ->
             Set.empty
 
+        Leaf leaf ->
+            case s of 
+                [] -> Set.fromList leaf.data
+                _ -> Set.empty
+
         Trie currTrie ->
             case s of
                 [] ->
@@ -177,6 +166,9 @@ getAllMatches trie =
     case trie of
         Empty ->
             Set.empty
+
+        Leaf leaf ->
+            Set.fromList leaf.data
 
         Trie currTrie ->
             let
