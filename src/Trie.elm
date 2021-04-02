@@ -1,8 +1,10 @@
-module Trie exposing (Index, DataTags, buildIndex, fetchFromIndex)
+module Trie exposing (DataTags, Index, buildIndex, fetchFromIndex)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Set exposing (Set)
+import DiacriticsNormalize exposing(normalize)
+
 
 type alias Index data =
     { trie : Trie
@@ -17,8 +19,7 @@ type Trie
         , data : List Int
         }
     | Leaf
-        {
-            data : List Int
+        { data : List Int
         }
 
 
@@ -28,7 +29,10 @@ type alias Entry data =
     , data : data
     }
 
-type alias DataTags data = List ( data, List String ) 
+
+type alias DataTags data =
+    List ( data, List String )
+
 
 emptyArray : Array Trie
 emptyArray =
@@ -63,9 +67,12 @@ buildIndex datas =
 
 addIntoTrie : Entry x -> Trie -> Trie
 addIntoTrie entry trie =
-    List.foldl (\curr acc ->
-        addIntoTrieAux entry.id curr acc
-    ) trie entry.tags
+    List.foldl
+        (\curr acc ->
+            addIntoTrieAux entry.id (normalize curr) acc
+        )
+        trie
+        entry.tags
 
 
 addIntoTrieAux : Int -> String -> Trie -> Trie
@@ -75,9 +82,9 @@ addIntoTrieAux id s trie =
             case trie of
                 Empty ->
                     Leaf { data = [ id ] }
-                
+
                 Leaf leaf ->
-                    Leaf {leaf | data = id :: leaf.data}
+                    Leaf { leaf | data = id :: leaf.data }
 
                 Trie currTrie ->
                     Trie { currTrie | data = id :: currTrie.data }
@@ -98,7 +105,7 @@ addIntoTrieAux id s trie =
                     in
                     Trie { data = [], children = newChildren }
 
-                Leaf leaf -> 
+                Leaf leaf ->
                     let
                         newChild =
                             addIntoTrieAux id ss Empty
@@ -124,7 +131,7 @@ addIntoTrieAux id s trie =
 
 fetchFromIndex : String -> Index data -> List data
 fetchFromIndex s index =
-    fetchFromTrie (String.toLower s |> String.toList) index.trie
+    fetchFromTrie (String.toLower s |> normalize |> String.toList) index.trie
         |> Set.foldl
             (\curr acc ->
                 case Dict.get curr index.dataDict of
@@ -144,9 +151,12 @@ fetchFromTrie s trie =
             Set.empty
 
         Leaf leaf ->
-            case s of 
-                [] -> Set.fromList leaf.data
-                _ -> Set.empty
+            case s of
+                [] ->
+                    Set.fromList leaf.data
+
+                _ ->
+                    Set.empty
 
         Trie currTrie ->
             case s of

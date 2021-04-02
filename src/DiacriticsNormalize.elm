@@ -1,10 +1,10 @@
-module DiacriticsNormalize exposing (normalizeDiacritics)
+module DiacriticsNormalize exposing (normalize)
 
 import Dict exposing (Dict)
 
 
-normalizeDiacritics : String -> String
-normalizeDiacritics s =
+normalize : String -> String
+normalize s =
     case String.uncons s of
         Nothing ->
             ""
@@ -14,10 +14,11 @@ normalizeDiacritics s =
                 cc =
                     Maybe.withDefault ' ' <| Dict.get c lookupDict
             in
-            if cc == ' '
-                (normalizeDiacritics sss)
+            if cc == ' ' then
+                normalize sss
+
             else
-                String.cons cc (normalizeDiacritics sss)
+                String.cons cc (normalize sss)
 
 
 lookupDict : Dict Char Char
