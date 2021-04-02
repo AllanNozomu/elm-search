@@ -12,9 +12,12 @@ normalizeDiacritics s =
         Just ( c, sss ) ->
             let
                 cc =
-                    Maybe.withDefault c <| Dict.get c lookupDict
+                    Maybe.withDefault ' ' <| Dict.get c lookupDict
             in
-            String.cons cc (normalizeDiacritics sss)
+            if cc == ' '
+                (normalizeDiacritics sss)
+            else
+                String.cons cc (normalizeDiacritics sss)
 
 
 lookupDict : Dict Char Char
