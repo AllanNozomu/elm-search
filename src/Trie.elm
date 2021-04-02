@@ -21,9 +21,13 @@ type Trie
 
 type alias Entry data =
     { id : Int
-    , tags : String
+    , tags : List String
     , data : data
     }
+
+
+type alias DataTags data =
+    List ( data, List String )
 
 
 type alias Data =
@@ -32,19 +36,19 @@ type alias Data =
 
 
 infos =
-    [ ( "Allan", "allan" )
-    , ( "Allan Nozomu Fukasawa", "allan" )
-    , ( "Alberto", "alberto" )
-    , ( "Allesandra", "allesandra" )
-    , ( "Carlos", "carlos" )
-    , ( "Carla", "carla" )
-    , ( "Carlin", "carlin" )
-    , ( "Eleonor", "eleonor" )
-    , ( "Ellen", "ellen" )
-    , ( "Elen", "elen" )
-    , ( " Eleonora", "eleonora" )
-    , ( "Ele", "ele" )
-    , ( "El", "el" )
+    [ ( "Allan", [ "allan" ] )
+    , ( "Allan Nozomu Fukasawa", [ "allan" ] )
+    , ( "Alberto", [ "alberto" ] )
+    , ( "Allesandra", [ "allesandra" ] )
+    , ( "Carlos", [ "carlos" ] )
+    , ( "Carla", [ "carla" ] )
+    , ( "Carlin", [ "carlin" ] )
+    , ( "Eleonor", [ "eleonor" ] )
+    , ( "Ellen", [ "ellen", "allan" ] )
+    , ( "Elen", [ "elen" ] )
+    , ( " Eleonora", [ "eleonora" ] )
+    , ( "Ele", [ "ele" ] )
+    , ( "El", [ "el" ] )
     ]
 
 
@@ -62,7 +66,7 @@ indexOfChar c =
     Char.toCode c - Char.toCode 'a'
 
 
-buildIndex : List ( data, String ) -> Index data
+buildIndex : DataTags data -> Index data
 buildIndex datas =
     let
         entries =
@@ -85,19 +89,24 @@ buildIndex datas =
 
 addIntoTrie : Entry x -> Trie -> Trie
 addIntoTrie entry trie =
-    addIntoTrieAux entry entry.tags trie
+    List.foldl
+        (\curr acc ->
+            addIntoTrieAux entry.id curr acc
+        )
+        trie
+        entry.tags
 
 
-addIntoTrieAux : Entry x -> String -> Trie -> Trie
-addIntoTrieAux entry s trie =
+addIntoTrieAux : Int -> String -> Trie -> Trie
+addIntoTrieAux id s trie =
     case String.uncons s of
         Nothing ->
             case trie of
                 Empty ->
-                    Trie { data = [ entry.id ], children = emptyArray }
+                    Trie { data = [ id ], children = emptyArray }
 
                 Trie currTrie ->
-                    Trie { currTrie | data = entry.id :: currTrie.data }
+                    Trie { currTrie | data = id :: currTrie.data }
 
         Just ( c, ss ) ->
             let
@@ -108,7 +117,7 @@ addIntoTrieAux entry s trie =
                 Empty ->
                     let
                         newChild =
-                            addIntoTrieAux entry ss Empty
+                            addIntoTrieAux id ss Empty
 
                         newChildren =
                             Array.set index newChild emptyArray
@@ -121,7 +130,7 @@ addIntoTrieAux entry s trie =
                             Maybe.withDefault Empty <| Array.get index currTrie.children
 
                         newChild =
-                            addIntoTrieAux entry ss currChild
+                            addIntoTrieAux id ss currChild
 
                         newChildren =
                             Array.set index newChild currTrie.children
