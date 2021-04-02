@@ -1,9 +1,9 @@
 module Trie exposing (DataTags, Index, buildIndex, fetchFromIndex)
 
 import Array exposing (Array)
+import DiacriticsNormalize exposing (normalize)
 import Dict exposing (Dict)
 import Set exposing (Set)
-import DiacriticsNormalize exposing(normalize)
 
 
 type alias Index data =
@@ -163,7 +163,7 @@ fetchFromTrie s trie =
                 Nothing ->
                     getAllMatches trie
 
-                Just (c, ss) ->
+                Just ( c, ss ) ->
                     let
                         index =
                             indexOfChar c
