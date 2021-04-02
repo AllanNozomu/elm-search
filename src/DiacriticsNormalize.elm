@@ -2,15 +2,19 @@ module DiacriticsNormalize exposing (normalizeDiacritics)
 
 import Dict exposing (Dict)
 
+
 normalizeDiacritics : String -> String
 normalizeDiacritics s =
     case String.uncons s of
-        Nothing -> ""
-        Just (c, sss) -> 
+        Nothing ->
+            ""
+
+        Just ( c, sss ) ->
             let
-                cc = Maybe.withDefault c <| Dict.get c lookupDict
+                cc =
+                    Maybe.withDefault c <| Dict.get c lookupDict
             in
-                String.cons cc (normalizeDiacritics sss)
+            String.cons cc (normalizeDiacritics sss)
 
 
 lookupDict : Dict Char Char
