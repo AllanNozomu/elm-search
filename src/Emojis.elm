@@ -1,10 +1,14 @@
-module Emojis exposing (emojisList)
+module Emojis exposing (emojisIndex, allEmojis)
 
 import Trie exposing (buildIndex, Index)
 
 emojisIndex : Index String
 emojisIndex = 
     buildIndex emojisList
+
+allEmojis : List String
+allEmojis =
+    List.map Tuple.first (List.reverse emojisList)
 
 emojisList : List (String, List String)
 emojisList = 
