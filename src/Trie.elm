@@ -4,11 +4,12 @@ import Array exposing (Array)
 import Dict exposing (Dict)
 import Set exposing (Set)
 
-type alias Index data = 
-    {
-        trie : Trie,
-        dataDict : Dict Int data
+
+type alias Index data =
+    { trie : Trie
+    , dataDict : Dict Int data
     }
+
 
 type Trie
     = Empty
@@ -31,23 +32,23 @@ type alias Data =
 
 
 infos =
-    [ Entry 1 "allan" <| Data "Allan"
-    , Entry 2 "allan" <| Data "Allan Nozomu Fukasawa"
-    , Entry 3 "alberto" <| Data "Alberto"
-    , Entry 4 "allesandra" <| Data "Allesandra"
-    , Entry 5 "carlos" <| Data "Carlos"
-    , Entry 6 "carla" <| Data "Carla"
-    , Entry 7 "carlin" <| Data "Carlin"
-    , Entry 8 "eleonor" <| Data "Eleonor"
-    , Entry 9 "ellen" <| Data "Ellen"
-    , Entry 10 "elen" <| Data "Elen"
-    , Entry 11 "eleonora" <| Data " Eleonora"
-    , Entry 12 "ele" <| Data "Ele"
-    , Entry 13 "el" <| Data "El"
+    [ ( "Allan", "allan" )
+    , ( "Allan Nozomu Fukasawa", "allan" )
+    , ( "Alberto", "alberto" )
+    , ( "Allesandra", "allesandra" )
+    , ( "Carlos", "carlos" )
+    , ( "Carla", "carla" )
+    , ( "Carlin", "carlin" )
+    , ( "Eleonor", "eleonor" )
+    , ( "Ellen", "ellen" )
+    , ( "Elen", "elen" )
+    , ( " Eleonora", "eleonora" )
+    , ( "Ele", "ele" )
+    , ( "El", "el" )
     ]
 
 
-infosIndex = 
+infosIndex =
     buildIndex infos
 
 
@@ -61,18 +62,23 @@ indexOfChar c =
     Char.toCode c - Char.toCode 'a'
 
 
-buildIndex : List (Entry data) -> Index data
-buildIndex entries =
+buildIndex : List ( data, String ) -> Index data
+buildIndex datas =
     let
-        trie = List.foldl
-            (\curr acc ->
-                addIntoTrie curr acc
-            )
-            Empty
-            entries
+        entries =
+            List.indexedMap (\index ( data, tags ) -> Entry index tags data) datas
 
-        dataDict = List.map (\info -> ( info.id, info.data )) entries
-            |> Dict.fromList 
+        trie =
+            List.foldl
+                (\curr acc ->
+                    addIntoTrie curr acc
+                )
+                Empty
+                entries
+
+        dataDict =
+            List.map (\info -> ( info.id, info.data )) entries
+                |> Dict.fromList
     in
     Index trie dataDict
 
